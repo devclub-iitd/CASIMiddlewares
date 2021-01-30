@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="stylesheet" href="/css/addnote.css" />
+
+        <title>Notes - Add a Note</title>
+    </head>
+    <body>
+        <div class="form-body">
+            <h1>Create a Note</h1>
+            <form method="post">
+                <label for="noteHeading">Heading</label>
+                <input type="text" name="noteHeading" required />
+                <label for="noteBody">Body</label>
+                <textarea name="noteBody" cols="30" rows="8" required></textarea>
+                <label for="user_id">Your ID</label>
+                <input type="text" name="user_id" id="userId" />
+                <button type="submit">Create</button>
+            </form>
+        </div>
+    </body>
+</html>

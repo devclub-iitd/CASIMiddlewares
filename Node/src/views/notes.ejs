@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;700;900&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="/css/notes.css" />
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <title>Notes</title>
+        <script>
+            // $(document).ready(() => {   
+            //     $('#addNoteForm').submit((event) => {
+            //         event.preventDefault();
+
+            //     })
+            // })
+        </script>
+    </head>
+    <body>
+        <div class="rootContainer">
+            <div class="half">
+                <div class="notes">
+                    <% if (!empty) { %>
+                        <% notes.forEach(function(note) { %>
+                        <div class="note">
+                            <div class="note-heading">
+                                <h5><%= note.noteHeading %></h5>
+                                <form action="/notes/delete/<%=note._id%>" method="post">
+                                    <button type="submit" class="delBtn">Delete Note</button>
+                                </form>
+                            </div>
+                            <div class="note-body">
+                                <p><%= note.noteBody %></p>
+                            </div>
+                        </div>
+                        <% }); %>
+                    <% } else {%>
+                        You have no notes
+                    <% } %>
+                </div>
+            </div>
+            <div class="half secondHalf">
+                <div class="formContainer">
+                    <form id="addNoteForm" action="/notes/addNote" method="POST" style="text-align: center;">
+                        <input type="text" name="noteHeading" placeholder="Note Title" required>
+                        <br>
+                        <br>
+                        <textarea name="noteBody" placeholder="Note Body" id="" cols="30" rows="10" required></textarea>
+                        <br><br>
+                        <button type="submit" class="btn" style="margin: 20px auto;">
+                            Add
+                        </button>
+                    </form>
+                    <br><br>
+                    <b>OR</b>
+                    <br><br>
+                    <a href="/home">
+                        <div class="btn">
+                            Home
+                        </div>
+                    
+                    </a>
+                    <!-- <a href="/notes/add" class="btn" id="createBtn">Create New Note</a> -->
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

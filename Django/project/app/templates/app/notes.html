@@ -1,0 +1,26 @@
+{% extends 'app/base.html' %}
+{% block body %}
+<div class="main">
+    <button id="createBtn">Create a Note</button>
+    <form action="{% url 'create-note' %}" id="noteForm" method="POST">
+        {% csrf_token %}
+        <label for="noteHeading">Heading</label>
+        <input type="text" name="noteHeading" id="noteHeading" />
+        <label for="noteBody">Body</label>
+        <textarea name="noteBody" id="noteBody"></textarea>
+        <button type="submit">Save</button>
+    </form>
+    <section class="note-container">
+        <!--render notes inside this section
+        Remove placeholder notes once we have actual data-->
+
+        {% for note in user.notes.all %}
+        <div class="note">
+            <div class="note-heading">{{note.noteHeading}}</div>
+            <div class="note-body">{{note.noteBody}}</div>
+        </div>
+        {% endfor %}
+
+    </section>
+</div>
+{% endblock body %}

@@ -1,0 +1,78 @@
+@import url('https://fonts.googleapis.com/css2?family=Titillium+Web:ital,wght@0,300;0,400;0,600;0,700;1,400&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Titillium Web', sans-serif;
+}
+
+body {
+    background-color: rgb(231, 231, 231);
+}
+
+.form-body {
+    margin-top: 3rem;
+    padding: 1rem 2rem 2rem 2rem;
+    margin-left: 25%;
+    width: 50%;
+    border-radius: 20px;
+    color: white;
+    background: #2d3142;
+}
+
+.form-body h1 {
+    text-align: center;
+    font-size: 2rem;
+}
+
+.form-body form {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.form-body input {
+    padding: 5px 5px;
+    border-radius: 10px;
+    margin: 10px 0 5px 0;
+    border: 2px solid rgba(0, 0, 0, 0.2);
+    outline: none;
+    font-size: 1rem;
+    transition: border 200ms ease-in;
+}
+
+.form-body button {
+    margin-top: 1.5rem;
+    align-self: center;
+    width: 25%;
+    border: none;
+    padding: 10px 0;
+    color: white;
+    font-size: 1.5rem;
+    border-radius: 10px;
+    background: #054a91;
+    transition: background 200ms ease-in-out;
+}
+
+.form-body textarea {
+    font-size: 1rem;
+    outline: none;
+    border: 2px solid rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    margin: 10px 0 5px 0;
+    transition: border 200ms ease;
+}
+.form-body textarea:focus {
+    border: 2px solid #6883ba;
+}
+
+.form-body input:focus {
+    border: 2px solid #6883ba;
+}
+
+.form-body button:hover {
+    background: #042f5a;
+}

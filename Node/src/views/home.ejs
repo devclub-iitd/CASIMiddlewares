@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;700;900&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="/css/home.css">
+        <title>CASI Test Server</title>
+    </head>
+    <body>
+        <div class="rootContainer">
+            <div class="center">
+                <div class="pageTitle">
+                    Profile
+                </>
+                <div class="miniLine"></div>
+                <div class="greeting">Hello, <%= user.firstname %> => (<%= user.username %>)</div>
+                <div class="email">Your email is : <%= user.email %></div>
+                <div class="welcome">Welcome to the Test server!</div>
+                <p><a href="/notes">Click here</a> to manage and view your notes</p>
+                <div class="logoutBtn">
+                    <a href="/logout">Log Out</a>
+                </div>
+            </div>
+        </div>
+        <div class="navBar">
+            <div class="navTitle">
+                <h3>Devclub Client</h3>
+            </div>
+        </div>
+    </body>
+</html>

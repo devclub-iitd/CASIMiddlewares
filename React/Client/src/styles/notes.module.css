@@ -1,0 +1,96 @@
+* {
+    margin: 0px;
+    border: 0px;
+    padding: 0px;
+    font-weight: 400;
+}
+a {
+    text-decoration: none;
+    font-size: none;
+    color: inherit;
+}
+.rootContainer {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    display: flex;
+    flex-direction: row;
+}
+.half {
+    width: 50%;
+    height: 100%;
+    overflow-y: scroll;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+.half1 {
+    height: 90%;
+    top: 5%;
+    position: relative;
+}
+
+.btn {
+    text-transform: uppercase;
+    padding: 10px 30px;
+    cursor: pointer;
+    border: 2px solid black;
+    text-align: center;
+    transition: 0.2s ease-out;
+}
+
+.btn:hover {
+    background: black;
+    color: white;
+    border-radius: 25px;
+}
+
+.notes {
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.note {
+    width: 60%;
+    margin: 20px auto;
+    padding: 1.2rem 2rem 2rem 2rem;
+    border-radius: 10px;
+    background-color: rgb(45, 49, 66);
+    color: white;
+    position: relative;
+}
+
+.noteHeading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 0 0.5rem 0;
+    font-size: 30px;
+    border-bottom: 1px solid white;
+}
+
+.noteBody {
+    margin-top: 0.5rem;
+    font-size: 15px;
+    line-height: 1.5rem;
+}
+
+.note .delBtn {
+    border-radius: 10px;
+    border: none;
+    padding: 0.2rem 1rem;
+    font-size: 20px;
+    background: #d62839;
+    color: white;
+    transition: background 100ms ease-in;
+}
+
+.note .delBtn:hover {
+    background: #6d1821;
+    cursor: pointer;
+}
