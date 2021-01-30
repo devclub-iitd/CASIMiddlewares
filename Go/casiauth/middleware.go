@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -16,8 +17,6 @@ import (
 const (
 	tokenName     = "token"
 	rememberName  = "rememberme"
-	authURL       = "http://localhost:8000/user/login"
-	refreshURL    = "http://localhost:8000/auth/refresh-token"
 	publicKeyPath = "public.pem"
 	maxTTL        = 60 * 5
 	queryParam    = "serviceURL"
@@ -32,8 +31,12 @@ var (
 	}
 	unauthorizedHandler = http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		rw.WriteHeader(http.StatusUnauthorized)
-		rw.Write([]byte("Alas you are out of scope!. Get some more permissions dude"))
+		rw.Write([]byte("Alas you are out of scope! Get some more permissions dude"))
 	})
+	serverURL  = "http://localhost:8000"
+	authURL    = serverURL + "/user/login"
+	refreshURL = serverURL + "/auth/refresh-token"
+	domain     = ""
 )
 
 // CASIClaims : CASI jwt payload
@@ -53,10 +56,12 @@ func CASIMiddleware(next http.Handler) http.Handler {
 				http.SetCookie(rw, &http.Cookie{
 					Name:   tokenName,
 					MaxAge: -1,
+					Domain: domain,
 				})
 				http.SetCookie(rw, &http.Cookie{
 					Name:   rememberName,
 					MaxAge: -1,
+					Domain: domain,
 				})
 			}
 		}()
@@ -81,7 +86,6 @@ func CASIMiddleware(next http.Handler) http.Handler {
 		})
 
 		if claims, ok := token.Claims.(*CASIClaims); ok && token.Valid {
-			printUser(claims)
 
 			if !claims.areAuthorized(r) {
 				unauthorizedHandler.ServeHTTP(rw, r)
@@ -163,14 +167,13 @@ func redirect(rw http.ResponseWriter, r *http.Request) {
 	redirectHandler := http.RedirectHandler(url, http.StatusTemporaryRedirect)
 	redirectHandler.ServeHTTP(rw, r)
 }
-func printUser(claims *CASIClaims) {
-	for k, v := range claims.User {
-		fmt.Printf("%s : %v\n", k, v)
-	}
-	fmt.Println("--------")
-}
 
 func init() {
+
+	if os.Getenv("APP_ENV") != "DEV" {
+		serverURL = "https://auth.devclub.in"
+		domain = "devclub.in"
+	}
 	fmt.Println("Reading public key!")
 	data, err := ioutil.ReadFile(publicKeyPath)
 	if err != nil {
