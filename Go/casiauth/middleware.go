@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
+	funk "github.com/thoas/go-funk"
 )
 
 const (
@@ -23,7 +25,15 @@ const (
 )
 
 var (
-	key *rsa.PublicKey
+	key          *rsa.PublicKey
+	defaultRoles = []string{"external_user"}
+	roles        = map[string][]string{
+		"^/admin": {"admin"},
+	}
+	unauthorizedHandler = http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		rw.WriteHeader(http.StatusUnauthorized)
+		rw.Write([]byte("Alas you are out of scope!. Get some more permissions dude"))
+	})
 )
 
 // CASIClaims : CASI jwt payload
@@ -48,7 +58,6 @@ func CASIMiddleware(next http.Handler) http.Handler {
 					Name:   rememberName,
 					MaxAge: -1,
 				})
-				redirect(rw, r)
 			}
 		}()
 
@@ -61,6 +70,7 @@ func CASIMiddleware(next http.Handler) http.Handler {
 		if err != nil {
 			tokenCookie, err = r.Cookie(rememberName)
 			if err != nil {
+				redirect(rw, r)
 				panic("No token found")
 			}
 			toRefresh = true
@@ -72,17 +82,25 @@ func CASIMiddleware(next http.Handler) http.Handler {
 
 		if claims, ok := token.Claims.(*CASIClaims); ok && token.Valid {
 			printUser(claims)
+
+			if !claims.areAuthorized(r) {
+				unauthorizedHandler.ServeHTTP(rw, r)
+				panic("Unauthorized!")
+			}
+
 			if tokenCookie.Name == tokenName {
 				if claims.ExpiresAt-time.Now().Local().Unix() < maxTTL {
 					toRefresh = true
 				}
 			}
+
 			if toRefresh {
 				refreshToken(rw, r, tokenCookie)
 			}
-			next.ServeHTTP(rw, r)
 
+			next.ServeHTTP(rw, r)
 		} else {
+			redirect(rw, r)
 			panic("Invalid Token")
 		}
 
@@ -107,6 +125,36 @@ func refreshToken(rw http.ResponseWriter, r *http.Request, token *http.Cookie) {
 		}
 	}
 
+}
+
+func (claims *CASIClaims) areAuthorized(req *http.Request) bool {
+	userRoles, exists := claims.User["roles"]
+	if !exists {
+		return false
+	}
+	checkRolesIn := func(desiredRoles []string) bool {
+		for _, r := range desiredRoles {
+			if !funk.Contains(userRoles, r) {
+				return false
+			}
+		}
+		return true
+	}
+	if !checkRolesIn(defaultRoles) {
+		return false
+	}
+
+	for regexPath, allowedRoles := range roles {
+		match, _ := regexp.MatchString(regexPath, req.URL.Path)
+		if !match {
+			continue
+		}
+
+		if !checkRolesIn(allowedRoles) {
+			return false
+		}
+	}
+	return true
 }
 
 func redirect(rw http.ResponseWriter, r *http.Request) {
