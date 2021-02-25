@@ -76,12 +76,14 @@ const auth = async (req, res, next) => {
         res.clearCookie(accessTokenName);
         res.clearCookie(refreshTokenName);
         // If the requested URL is a public path, proceed without any checks
-        if (publicPaths.find(pathRegex => {return new RegExp(pathRegex).test(req.originalUrl)}) !== undefined) {
-            next();
-        } else {
-            if (redirectURL != null) res.redirect(redirectURL);
-            else res.redirect(SSO_Login_URL + clientURL + req.originalUrl);
-        }
+        // if (publicPaths.find(pathRegex => {return new RegExp(pathRegex).test(req.originalUrl)}) !== undefined) {
+        //     next();
+        // } else {
+        //     if (redirectURL != null) res.redirect(redirectURL);
+        //     else res.redirect(SSO_Login_URL + clientURL + req.originalUrl);
+        //     throw error;
+        // }
+        return UnauthorizedHandler(req, res);
     }
     
 };
