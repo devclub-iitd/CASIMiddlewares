@@ -56,8 +56,6 @@ app.get('/home', (req, res) => {
 app.use('/notes', notes);
 
 app.get('/logout', (req, res) => {
-    res.clearCookie('token');
-    res.clearCookie('rememberme');
     res.redirect('/');
 });
 

@@ -25,6 +25,8 @@ const redirectURL = '/';
 // Array of public paths, these paths will be available without logging in and even for users that do not have sufficient permisisons
 const publicPaths = ['^/public.*','^/asset.*','^/$'];
 
+const logoutPath = '/logout';
+
 const UnauthorizedHandler = (req,res) => {
     return res.status(401).send("Alas You are out of scope! Go get some more permissions dude");
 }
@@ -65,6 +67,9 @@ const auth = async (req, res, next) => {
                 const response = await axios.post(SSO_Refresh_URL, { token })
                 res.setHeader('set-cookie', response.headers['set-cookie'])
             }
+        }
+        if(req.path === logoutPath){
+            throw Error("Logout");
         }
         if(isAuthorized(req,decoded.user)){
             req.user = decoded.user;
