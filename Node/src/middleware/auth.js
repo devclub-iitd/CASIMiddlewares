@@ -78,8 +78,12 @@ const auth = async (req, res, next) => {
         else return UnauthorizedHandler(req,res);
     } catch (error) {
         req.user = null;
-        res.clearCookie(accessTokenName);
-        res.clearCookie(refreshTokenName);
+        res.clearCookie(accessTokenName, {
+            domain: process.env.NODE_ENV !== 'DEV' ? 'devclub.in' : null
+        });
+        res.clearCookie(refreshTokenName, {
+            domain: process.env.NODE_ENV !== 'DEV' ? 'devclub.in' : null
+        });
         // If the requested URL is a public path, proceed without any checks
         if (publicPaths.find(pathRegex => {return new RegExp(pathRegex).test(req.originalUrl)}) !== undefined) {
             next();
