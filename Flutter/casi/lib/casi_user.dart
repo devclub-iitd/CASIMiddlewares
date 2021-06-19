@@ -35,6 +35,7 @@ class CasiLogin {
   String clientId;
   String secret;
   String _serverUrl = "https://auth.devclub.in";
+  // String _serverUrl = "http://192.168.1.5:8000";
   String _loginURL;
   String _token;
   Function(String token, CasiUser user) _onSuccess =
@@ -79,7 +80,7 @@ class CasiLogin {
         _token = 'mutex';
         try {
           _cookies = await webview.getCookies();
-          _token = _cookies['"_token'].toString();
+          _token = _cookies['"_rememberme'].toString();
           _token = _token.trim().substring(0, _token.length - 1);
           CasiUser user = await fetchUserDetails();
           this._onSuccess(_token, user);
@@ -102,7 +103,7 @@ class CasiLogin {
 
   Future<CasiUser> fetchUserDetails() async {
     final response = await http.post(this._serverUrl + '/profile', headers: {
-      'Cookie': "token=${this._token};",
+      'Cookie': "rememberme=${this._token};",
     });
     final jsonData = jsonDecode(response.body);
     if (response.statusCode == 200) {
@@ -118,7 +119,7 @@ class CasiLogin {
     String toSendToken = oldToken ?? _token;
 
     final response = await http.post(this._serverUrl + '/auth/refresh-token',
-        body: {'token': toSendToken});
+        body: {'rememberme': toSendToken});
     final jsonData = jsonDecode(response.body);
     if (response.statusCode == 200) {
       if (onRefreshSuccess != null) {

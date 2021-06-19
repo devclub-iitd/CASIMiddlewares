@@ -4,6 +4,8 @@ import 'package:casi/casi_user.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+String tokenKey = 'casiToken';
+
 class LoginPage extends StatefulWidget {
   @override
   _LoginPageState createState() => _LoginPageState();
@@ -84,7 +86,7 @@ class HomeScreen extends StatelessWidget {
                 onPressed: () async {
                   SharedPreferences prefs =
                       await SharedPreferences.getInstance();
-                  prefs.remove('token');
+                  prefs.remove(tokenKey);
                   Navigator.of(context).pop();
                 },
                 child: Text('Logout'),
@@ -102,11 +104,12 @@ class HomeScreen extends StatelessWidget {
 Function onPressed(BuildContext context) {
   return () async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String oldToken = prefs.getString('token');
-
-    String clientId = '5f7ca56f01cb380034260a02';
+    String oldToken = prefs.getString(tokenKey);
+    print("OldToken: " + oldToken ?? "");
+    String clientId = '5faecde9a36bf00cba428d9b';
     String secret =
-        'o8ggsY3EeNeCdl0U3izDF1LvR0cU33zopJeFHltapvle8bBChvzHT5miRN23o5v0';
+        // 'o8ggsY3EeNeCdl0U3izDF1LvR0cU33zopJeFHltapvle8bBChvzHT5miRN23o5v0';
+        '4rYPKHaAPMz9ZabR8M6m5rglgySh9v0e3bhiOAAd7DeigV7tfNFzlGHic6FWnZ7D';
 
     void onLogin(CasiUser user) {
       Navigator.push(
@@ -120,14 +123,15 @@ Function onPressed(BuildContext context) {
     try {
       CasiUser user = await CasiLogin.fromToken(oldToken).refreshToken(
           onRefreshSuccess: (String newToken) {
-        print(newToken);
-        prefs.setString('token', newToken);
+        print("newToken: " + newToken ?? "");
+        prefs.setString(tokenKey, newToken);
       });
       onLogin(user);
     } catch (e) {
       await CasiLogin(clientId, secret,
           onSuccess: (String token, CasiUser user) {
-        prefs.setString('token', token);
+        print(token);
+        prefs.setString(tokenKey, token);
         onLogin(user);
       }, onError: (dynamic e) {
         showDialog(
