@@ -1,6 +1,6 @@
 # CASIMiddlewares
 
-This Repo tracks all middlewares for CASI in one place which were originally developed at seperate places.
+This Repo tracks all middlewares for CASI in one place which were originally developed at separate places.
 
 1. [React](https://github.com/aryangupta-42/SSOTestClientReact)
 2. [Node](https://github.com/Harsh14901/CASI_Node_Middleware)

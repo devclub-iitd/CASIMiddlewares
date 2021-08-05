@@ -1,8 +1,6 @@
-import 'dart:convert';
-
-import 'package:casi/casi_user.dart';
-import 'package:flutter/material.dart';
+import './casi_user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/material.dart';
 
 String tokenKey = 'casiToken';
 
@@ -12,35 +10,72 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  
+  bool _isLoading = false;
+  void loading(bool isLoading) {
+    if (isLoading)
+      setState(() => _isLoading = isLoading);
+    else
+      Future.delayed(const Duration(milliseconds: 1000), () {
+        setState(() => _isLoading = isLoading);
+      });
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
-        body: Container(
-          color: Colors.white,
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.max,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                FlutterLogo(size: 150),
-                SizedBox(height: 50),
-                _signInButton(),
-              ],
-            ),
-          ),
-        ),
+        body: _isLoading
+            ? Container(
+                color: Colors.white,
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.max,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      FlutterLogo(size: 150),
+                      SizedBox(height: 50),
+                      CircularProgressIndicator(),
+                    ],
+                  ),
+                ),
+              )
+            : Container(
+                color: Colors.white,
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.max,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      FlutterLogo(size: 150),
+                      SizedBox(height: 50),
+                      _signInButton(),
+                    ],
+                  ),
+                ),
+              ),
       ),
     );
   }
 
   Widget _signInButton() {
-    return OutlineButton(
-      splashColor: Colors.grey,
-      onPressed: onPressed(context),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(40)),
-      highlightElevation: 0,
-      borderSide: BorderSide(color: Colors.grey),
+    return OutlinedButton(
+      onPressed: onPressed(context, loading),
+     
+      style: ButtonStyle(
+        shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+          RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(40),
+          )
+        ),
+        side: MaterialStateProperty.all<BorderSide>(
+          BorderSide(
+            width: 1,
+            color: Colors.grey
+          )
+        ),
+      ),
+      
       child: Padding(
         padding: const EdgeInsets.fromLTRB(0, 10, 0, 10),
         child: Row(
@@ -70,7 +105,7 @@ class HomeScreen extends StatelessWidget {
 
   const HomeScreen(
     this.user, {
-    Key key,
+    Key? key,
   }) : super(key: key);
 
   @override
@@ -82,7 +117,7 @@ class HomeScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               Text('Welcome, ${user.username}', style: TextStyle(fontSize: 20)),
-              RaisedButton(
+              ElevatedButton(
                 onPressed: () async {
                   SharedPreferences prefs =
                       await SharedPreferences.getInstance();
@@ -90,8 +125,14 @@ class HomeScreen extends StatelessWidget {
                   Navigator.of(context).pop();
                 },
                 child: Text('Logout'),
-                color: Colors.red,
-                textColor: Colors.white,
+                style : ButtonStyle(
+                  backgroundColor: MaterialStateProperty.all<Color>(
+                    Colors.red
+                  ),
+                  foregroundColor: MaterialStateProperty.all<Color>(
+                    Colors.white
+                  ),
+                )
               ),
             ],
           ),
@@ -101,15 +142,14 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-Function onPressed(BuildContext context) {
+void Function() onPressed(BuildContext context, Function loading) {
   return () async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String oldToken = prefs.getString(tokenKey);
-    print("OldToken: " + oldToken ?? "");
+    //prefs.setString(tokenKey, "testToken");                                                 //test, uncomment for testing refresh token functions
+    String? oldToken = prefs.getString(tokenKey);
+
     String clientId = '5faecde9a36bf00cba428d9b';
-    String secret =
-        // 'o8ggsY3EeNeCdl0U3izDF1LvR0cU33zopJeFHltapvle8bBChvzHT5miRN23o5v0';
-        '4rYPKHaAPMz9ZabR8M6m5rglgySh9v0e3bhiOAAd7DeigV7tfNFzlGHic6FWnZ7D';
+    String secret = '4rYPKHaAPMz9ZabR8M6m5rglgySh9v0e3bhiOAAd7DeigV7tfNFzlGHic6FWnZ7D';
 
     void onLogin(CasiUser user) {
       Navigator.push(
@@ -121,14 +161,15 @@ Function onPressed(BuildContext context) {
     }
 
     try {
+      loading(true);
       CasiUser user = await CasiLogin.fromToken(oldToken).refreshToken(
           onRefreshSuccess: (String newToken) {
-        print("newToken: " + newToken ?? "");
         prefs.setString(tokenKey, newToken);
       });
       onLogin(user);
+      loading(false);
     } catch (e) {
-      await CasiLogin(clientId, secret,
+      await CasiLogin(clientId, secret, loading,
           onSuccess: (String token, CasiUser user) {
         print(token);
         prefs.setString(tokenKey, token);
@@ -140,7 +181,7 @@ Function onPressed(BuildContext context) {
             title: Text('An Error Occured!'),
             content: Text(e.toString()),
             actions: <Widget>[
-              FlatButton(
+              TextButton(
                 onPressed: () => Navigator.of(context).pop(),
                 child: Text('Try Again'),
               )

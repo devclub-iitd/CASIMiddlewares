@@ -1,134 +1,205 @@
 import 'dart:convert';
-import 'package:corsac_jwt/corsac_jwt.dart';
-import 'package:flutter_webview_plugin/flutter_webview_plugin.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:jaguar_jwt/jaguar_jwt.dart';
 
 class CasiUser {
   String username;
   String firstname;
   String lastname;
   String email;
-  String isverified;
+  String? isverified;
   List<String> roles;
 
   CasiUser({
-    this.email,
-    this.firstname,
+    required this.email,
+    required this.firstname,
     this.isverified,
-    this.lastname,
-    this.roles,
-    this.username,
+    required this.lastname,
+    required this.roles,
+    required this.username,
   });
 
   factory CasiUser.fromJson(Map<String, dynamic> user) {
+    print("const");
     return CasiUser(
-      email: user['email'],
+      email: user['email'] ?? '',
       firstname: user['firstname'] ?? '',
-      lastname: user['lastname'] ?? '',
-      roles: (user['roles'] as List).map((e) => e.toString()).toList() ?? [],
+      lastname: user['lastname'] ?? '', 
+      roles: List<String>.from(user["roles"].map((x) => x)),
       username: user['username'] ?? '',
     );
   }
 }
 
 class CasiLogin {
-  String clientId;
-  String secret;
+  String clientId = '';
+  String secret = '';
   String _serverUrl = "https://auth.devclub.in";
-  // String _serverUrl = "http://192.168.1.5:8000";
-  String _loginURL;
-  String _token;
+  String _loginURL = '';
+  String? _token;
+  String _getTokenURL = 'https://flutter-f8ded-default-rtdb.firebaseio.com/home.json';                                           //url to get token from
+  String _requestURL =
+      'https://flutter-f8ded-default-rtdb.firebaseio.com/home.json';         //url to get request token from
+  Function? _loading;
+
   Function(String token, CasiUser user) _onSuccess =
       (String token, CasiUser user) => {};
   Function(dynamic err) _onError = (dynamic err) => {};
-  Map<String, dynamic> _cookies;
 
-  CasiLogin(String clientId, String accessToken,
-      {Function(String token, CasiUser user) onSuccess,
-      Function(dynamic err) onError}) {
+  CasiLogin(String clientId, String accessToken, Function? loading,
+      {Function(String token, CasiUser user)? onSuccess,
+      Function(dynamic err)? onError}) {
     this.clientId = clientId;
-
+    this._loading = loading;
     this._onSuccess = onSuccess ?? _onSuccess;
     this._onError = onError ?? _onError;
+    final claimSet = JwtClaim(
+      expiry: new DateTime.now().add(new Duration(minutes: 5)),
+      otherClaims: {
+        'data': {'clientId': clientId}
+      },
+    );
 
-    var builder = new JWTBuilder();
-    var signer = new JWTHmacSha256Signer(accessToken);
-    builder
-      ..expiresAt = new DateTime.now().add(new Duration(minutes: 5))
-      ..setClaim('data', {'clientId': clientId});
-
-    var signedToken = builder.getSignedToken(signer);
-    this.secret = signedToken.toString();
-
-    this._loginURL =
-        "${this._serverUrl}/user/login?serviceURL=${this._serverUrl}/auth/clientVerify?q=${Uri.encodeQueryComponent(this.secret)}";
+    this.secret = issueJwtHS256(claimSet, accessToken);
   }
 
-  CasiLogin.fromToken(String token) {
+  CasiLogin.fromToken(String? token) {
     this._token = token;
   }
 
   Future<void> signIn() async {
-    if (_loginURL == null)
-      throw Exception("No client ID and client secret found");
-    final webview = new FlutterWebviewPlugin();
-    webview.onUrlChanged.listen((url) async {
-      print("URL CHANGED: $url");
+    try {
+      _loading!(true);
+      var requestTokenResponse = await http.post(Uri.parse(_requestURL),
+          body: json.encode({
+            'key1': 'val1',                                        //POST request body to get request token
+            'key2': 'val2',
+          }));
+      String requestToken = json.decode(
+          requestTokenResponse.body)['name'];                     //Key of request token in response
+      print(requestToken);
+      _loginURL =
+          'https://auth.devclub.in';                              //construct login url using request token
 
-      if (url.startsWith("${this._serverUrl}/auth/clientVerify?q=")) {
-        if (_token != null) return;
-        _token = 'mutex';
-        try {
-          _cookies = await webview.getCookies();
-          _token = _cookies['"_rememberme'].toString();
-          _token = _token.trim().substring(0, _token.length - 1);
-          CasiUser user = await fetchUserDetails();
-          this._onSuccess(_token, user);
-        } catch (e) {
-          this._onError("Login Failed");
-        }
-        webview.close();
-      }
-    });
-    _token = null;
-    await webview.launch(
-      _loginURL,
-      ignoreSSLErrors: true,
-      clearCookies: true,
-      clearCache: true,
-      userAgent:
-          'Mozilla/5.0 (Linux; Android 4.0.4; Galaxy Nexus Build/IMM76B) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.133 Mobile Safari/535.19',
-    );
-  }
+      final ChromeSafariBrowser webview = new Webview(
+          getTokenURL: _getTokenURL,
+          fetchUserDetails: fetchUserDetails,
+          onSuccess: this._onSuccess,
+          onError: this._onError,
+          secret: this.secret,
+          loading: _loading
+          );
 
-  Future<CasiUser> fetchUserDetails() async {
-    final response = await http.post(this._serverUrl + '/profile', headers: {
-      'Cookie': "rememberme=${this._token};",
-    });
-    final jsonData = jsonDecode(response.body);
-    if (response.statusCode == 200) {
-      return CasiUser.fromJson(jsonData['user']);
-    } else {
-      throw Exception(jsonData['msg']);
+      await webview.open(
+          url: Uri.parse(_loginURL),
+          options: ChromeSafariBrowserClassOptions(
+              android: AndroidChromeCustomTabsOptions(
+                  addDefaultShareMenuItem: false, enableUrlBarHiding: true),
+              ios: IOSSafariOptions(barCollapsingEnabled: true)));
+      _loading!(false);
+    } catch (e) {
+      _loading!(false);
+      this._onError("login failed");
+      print(e);
     }
   }
 
-  Future<CasiUser> refreshToken(
-      {String oldToken, Function(String token) onRefreshSuccess}) async {
-    if (oldToken == null && _token == null) throw Exception("No token found");
-    String toSendToken = oldToken ?? _token;
+  Future<CasiUser> fetchUserDetails(String token) async {
+    print(token);
+    
+    // final response = await http.post(Uri.parse("https://casi-user-api.herokuapp.com/api/getUser"),     //test, uncomment for testing
+    // body: json.encode({                                                                                //manual login (without refresh token).
+    //   "key": "val"                                                                                     //test
+    // })                                                                                                 //test
+    // );                                                                                                 //test
+    // final jsonData = json.decode(response.body);                                                       //test
+    // print(jsonData['user']);                                                                           //test
+    // print("user detail fetched");                                                                      //test
+    // return CasiUser.fromJson(jsonData['user']);                                                        //test    
 
-    final response = await http.post(this._serverUrl + '/auth/refresh-token',
-        body: {'rememberme': toSendToken});
-    final jsonData = jsonDecode(response.body);
-    if (response.statusCode == 200) {
-      if (onRefreshSuccess != null) {
-        onRefreshSuccess(
-            response.headers['set-cookie'].split(';')[0].split('=')[1]);
+    final response =                                                                     //actual
+        await http.post(Uri.parse(this._serverUrl + '/profile'), headers: {              //actual
+      'Cookie': "rememberme=${token};",                                                  //actual
+    });                                                                                  //actual
+    final jsonData = jsonDecode(response.body);                                          //actual
+    if (response.statusCode == 200) {                                                    //actual
+      print('user detail fetched');                                                      //actual
+      return CasiUser.fromJson(jsonData['user']);                                        //actual
+    } else {                                                                             //actual
+      throw Exception(jsonData['msg']);                                                  //actual
+    }                                                                                    //actual
+  }
+
+  Future<CasiUser> refreshToken(
+      {Function(String token)? onRefreshSuccess}) async {
+    if (_token == null) throw Exception("No token found");
+    String? toSendToken = _token;
+
+    // final response = await http.post(Uri.parse("https://casi-user-api.herokuapp.com/api/getUser"),   //test, uncomment for testing
+    //   body: json.encode({                                                                            //refresh token functions.
+    //     'key': 'val',                                                                                //This API will always return
+    //   })                                                                                             //a response similar to that returned
+    // );                                                                                               //by CASI on posting the token.
+    // final jsonData = json.decode(response.body);                                                     //test
+    // return CasiUser.fromJson(jsonData['user']);                                                      //test
+    
+    final response = await http.post(                                                             //actual                
+        Uri.parse(this._serverUrl + '/auth/refresh-token'),                                       //actual
+        body: {'rememberme': toSendToken});                                                       //actual
+    final jsonData = jsonDecode(response.body);                                                   //actual
+    if (response.statusCode == 200) {                                                             //actual
+      if (onRefreshSuccess != null) {                                                             //actual
+        onRefreshSuccess(                                                                         //actual
+            response.headers['set-cookie']!.split(';')[0].split('=')[1]);                         //actual
+      }                                                                                           //actual
+      return CasiUser.fromJson(jsonData['user']);                                                 //actual
+    } else {                                                                                      //actual
+      throw Exception(jsonData['msg']);                                                           //actual
+    }                                                                                             //actual
+  }
+}
+
+class Webview extends ChromeSafariBrowser {
+  String getTokenURL;
+  Function fetchUserDetails;
+  Function onSuccess;
+  Function onError;
+  String secret;
+  Function? loading;
+  Webview(
+      {
+      required this.getTokenURL,
+      required this.fetchUserDetails,
+      required this.onSuccess,
+      required this.onError,
+      required this.secret,
+      required this.loading,
       }
-      return CasiUser.fromJson(jsonData['user']);
-    } else {
-      throw Exception(jsonData['msg']);
+  );
+
+  @override
+  void onClosed() async {
+    try {
+      loading!(true);
+      var tokenResponse = await http.post(Uri.parse(getTokenURL),
+          body: json.encode({
+            'key1': 'val1',                                      //POST request body to get oauth token
+            'key2': 'val2',
+          }));
+
+      String token = json.decode(
+          tokenResponse.body)['name'];                           //Enter json key of token in response
+      print(token);
+      print("ok");
+      CasiUser user = await fetchUserDetails(token);
+      loading!(false);
+      print("x");
+      this.onSuccess(token, user);
+    } catch (e) {
+      loading!(false);
+      print("edg");
+      this.onError("login failed");
     }
   }
 }
