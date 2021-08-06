@@ -1,4 +1,4 @@
-import 'package:casi/login.dart';
+import './login.dart';
 import 'package:flutter/material.dart';
 
 void main() {
