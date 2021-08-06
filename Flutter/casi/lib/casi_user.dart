@@ -21,7 +21,6 @@ class CasiUser {
   });
 
   factory CasiUser.fromJson(Map<String, dynamic> user) {
-    print("const");
     return CasiUser(
       email: user['email'] ?? '',
       firstname: user['firstname'] ?? '',
@@ -38,6 +37,7 @@ class CasiLogin {
   String _serverUrl = "https://auth.devclub.in";
   String _loginURL = '';
   String? _token;
+  String _requestToken='';
   String _getTokenURL = 'https://flutter-f8ded-default-rtdb.firebaseio.com/home.json';                                           //url to get token from
   String _requestURL =
       'https://flutter-f8ded-default-rtdb.firebaseio.com/home.json';         //url to get request token from
@@ -71,16 +71,9 @@ class CasiLogin {
   Future<void> signIn() async {
     try {
       _loading!(true);
-      var requestTokenResponse = await http.post(Uri.parse(_requestURL),
-          body: json.encode({
-            'key1': 'val1',                                        //POST request body to get request token
-            'key2': 'val2',
-          }));
-      String requestToken = json.decode(
-          requestTokenResponse.body)['name'];                     //Key of request token in response
-      print(requestToken);
-      _loginURL =
-          'https://auth.devclub.in';                              //construct login url using request token
+      await getRequestToken();
+      print(_requestToken);
+      _loginURL = getLoginURL(_requestToken);                            
 
       final ChromeSafariBrowser webview = new Webview(
           getTokenURL: _getTokenURL,
@@ -105,6 +98,22 @@ class CasiLogin {
     }
   }
 
+  Future<void> getRequestToken() async{
+     var requestTokenResponse = await http.post(Uri.parse(_requestURL),
+          body: json.encode({
+            'key1': 'val1',                                        //POST request body to get request token
+            'key2': 'val2',
+          }));
+      this._requestToken = json.decode(
+          requestTokenResponse.body)['name'];                                  //Key of request token in response
+      
+  }
+
+  String getLoginURL(String requestToken){
+    var loginURL = "https://auth.devclub.in";                                 //construct login URL from request token here
+    return loginURL;
+  }
+
   Future<CasiUser> fetchUserDetails(String token) async {
     print(token);
     
@@ -113,8 +122,7 @@ class CasiLogin {
     //   "key": "val"                                                                                     //test
     // })                                                                                                 //test
     // );                                                                                                 //test
-    // final jsonData = json.decode(response.body);                                                       //test
-    // print(jsonData['user']);                                                                           //test
+    // final jsonData = json.decode(response.body);                                                       //test                                                                          
     // print("user detail fetched");                                                                      //test
     // return CasiUser.fromJson(jsonData['user']);                                                        //test    
 
@@ -166,6 +174,7 @@ class Webview extends ChromeSafariBrowser {
   Function onSuccess;
   Function onError;
   String secret;
+  String _token='';
   Function? loading;
   Webview(
       {
@@ -182,24 +191,25 @@ class Webview extends ChromeSafariBrowser {
   void onClosed() async {
     try {
       loading!(true);
-      var tokenResponse = await http.post(Uri.parse(getTokenURL),
+      await getToken;
+      print(_token);
+      CasiUser user = await fetchUserDetails(_token);
+      loading!(false);
+      this.onSuccess(_token, user);
+    } catch (e) {
+      loading!(false);
+      this.onError("login failed");
+    }
+  }
+
+  Future<void> getToken() async{
+    var tokenResponse = await http.post(Uri.parse(getTokenURL),
           body: json.encode({
             'key1': 'val1',                                      //POST request body to get oauth token
             'key2': 'val2',
           }));
 
-      String token = json.decode(
+      _token = json.decode(
           tokenResponse.body)['name'];                           //Enter json key of token in response
-      print(token);
-      print("ok");
-      CasiUser user = await fetchUserDetails(token);
-      loading!(false);
-      print("x");
-      this.onSuccess(token, user);
-    } catch (e) {
-      loading!(false);
-      print("edg");
-      this.onError("login failed");
-    }
   }
 }
