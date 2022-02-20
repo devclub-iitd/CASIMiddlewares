@@ -9,8 +9,10 @@ A sample flutter mobile app to integrate [CASI](https://auth.devclub.in/) for au
  ```
 dependencies:
   http: ^0.13.3
-  jaguar_jwt: ^3.0.0
   flutter_inappwebview: ^5.3.2
+  dart_jsonwebtoken: ^2.4.0
+  jwt_decode: ^0.3.1
+  flutter_webview_plugin: ^0.4.0
   
   # Optional - Shared Preferences is used in this example app just to store the token.
   shared_preferences: ^2.0.6
