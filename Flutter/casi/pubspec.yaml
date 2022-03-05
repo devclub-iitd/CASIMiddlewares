@@ -26,7 +26,9 @@ dependencies:
   shared_preferences: ^2.0.6
   http: ^0.13.3
   flutter_inappwebview: ^5.3.2
-  jaguar_jwt: ^3.0.0
+  dart_jsonwebtoken: ^2.4.0
+  jwt_decode: ^0.3.1
+  flutter_webview_plugin: ^0.4.0
 
 
   # The following adds the Cupertino Icons font to your application.
